@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Urlaubsplaner 2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800">Urlaubsantrag einreichen</h2>
+        
+        <form id="urlaubsForm">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">Name</label>
+                <input type="text" id="name" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Von</label>
+                    <input type="date" id="start" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Bis</label>
+                    <input type="date" id="ende" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
+                Antrag absenden
+            </button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('urlaubsForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Antrag wurde (theoretisch) gespeichert! Zeit für Strand.');
+        });
+    </script>
+</body>
+</html>
