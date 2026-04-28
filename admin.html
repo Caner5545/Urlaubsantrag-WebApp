@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin-Panel | Archiv-System</title>
+    <title>Admin-Panel | Urlaubsplaner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -18,7 +18,7 @@
                     <button onclick="setArchivSicht(true)" id="btnArchiv" class="text-sm font-bold text-gray-500 hover:text-white pb-1">Archiv</button>
                 </div>
             </div>
-            <button onclick="ladeAntraege()" class="bg-gray-800 hover:bg-gray-700 p-2 rounded-lg transition">🔄</button>
+            <button onclick="ladeAntraege()" class="bg-gray-800 hover:bg-gray-700 p-2 rounded-lg transition">🔄 Aktualisieren</button>
         </div>
 
         <div id="liste" class="grid gap-6">
@@ -27,10 +27,17 @@
     </div>
 
     <script>
+        // 1. Passwortschutz
         const PASSWORT = "Danfoss123"; 
-        if (prompt("Passwort:") !== PASSWORT) { window.location.href = "index.html"; }
+        if (prompt("Passwort:") !== PASSWORT) { 
+            window.location.href = "index.html"; 
+        }
 
-        const _supabase = supabase.createClient('https://gmwmnnsmanmhblmmvusj.supabase.co', 'DEIN_KEY');
+        // 2. Supabase Verbindung (Key wurde hier eingefügt)
+        const SUPABASE_URL = 'https://gmwmnnsmanmhblmmvusj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtd21ubnNtYW5taGJsbW12dXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMjA5ODYsImV4cCI6MjA5Mjg5Njk4Nn0.Y5_SWw_25e0lTDcxU1dqkX7atICOpyk2_jpcWBkrRKM';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         let zeigeArchiv = false;
 
         function setArchivSicht(status) {
@@ -41,32 +48,52 @@
         }
 
         async function ladeAntraege() {
+            const container = document.getElementById('liste');
+            
+            // Wir holen alle Daten und filtern im Code, das ist sicherer gegen NULL-Werte
             const { data, error } = await _supabase
                 .from('Urlaubsplaner')
                 .select('*')
-                .eq('archiviert', zeigeArchiv)
                 .order('created_at', { ascending: false });
 
-            const container = document.getElementById('liste');
+            if (error) {
+                container.innerHTML = `<p class="text-red-500">Fehler: ${error.message}</p>`;
+                return;
+            }
+
             container.innerHTML = '';
 
-            data.forEach(antrag => {
+            // Filterung: Im Archiv nur 'true', sonst alles was NICHT 'true' ist
+            const gefiltert = data.filter(antrag => {
+                return zeigeArchiv ? (antrag.archiviert === true) : (antrag.archiviert !== true);
+            });
+
+            if (gefiltert.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500 mt-10">Keine Anträge gefunden.</p>`;
+                return;
+            }
+
+            gefiltert.forEach(antrag => {
                 const card = document.createElement('div');
-                card.className = "bg-gray-800 p-6 rounded-xl border-l-4 " + (antrag.status === 'genehmigt' ? 'border-green-500' : 'border-yellow-500');
+                const statusColor = antrag.status === 'genehmigt' ? 'border-green-500' : (antrag.status === 'abgelehnt' ? 'border-red-500' : 'border-yellow-500');
+                
+                card.className = `bg-gray-800 p-6 rounded-xl border-l-4 ${statusColor} shadow-lg`;
                 
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
-                            <h2 class="text-xl font-bold">${antrag.name}</h2>
-                            <p class="text-blue-300">${antrag.start_datum} bis ${antrag.end_datum}</p>
-                            <p class="text-xs text-gray-500 uppercase mt-1">Status: ${antrag.status}</p>
+                            <h2 class="text-xl font-bold">${antrag.name || 'Unbekannt'}</h2>
+                            <p class="text-blue-300 font-medium">${antrag.start_datum} bis ${antrag.end_datum}</p>
+                            <p class="text-[10px] text-gray-500 uppercase mt-1 tracking-widest">Status: ${antrag.status}</p>
                         </div>
                         <div class="flex flex-col gap-2">
-                            ${!antrag.archiviert ? 
-                                `<button onclick="updateStatus('${antrag.id}', 'genehmigt')" class="bg-green-600 text-xs px-3 py-1 rounded">Genehmigen</button>
-                                 <button onclick="archivieren('${antrag.id}')" class="bg-gray-600 text-xs px-3 py-1 rounded">Ins Archiv</button>` :
-                                `<button onclick="archivieren('${antrag.id}', false)" class="bg-blue-600 text-xs px-3 py-1 rounded">Wiederherstellen</button>`
-                            }
+                            ${!antrag.archiviert ? `
+                                <button onclick="updateStatus('${antrag.id}', 'genehmigt')" class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition">Genehmigen</button>
+                                <button onclick="updateStatus('${antrag.id}', 'abgelehnt')" class="bg-red-600 hover:bg-red-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition">Ablehnen</button>
+                                <button onclick="archivieren('${antrag.id}')" class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-4 py-2 rounded-lg transition">Archivieren</button>
+                            ` : `
+                                <button onclick="archivieren('${antrag.id}', false)" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition">Wiederherstellen</button>
+                            `}
                         </div>
                     </div>
                 `;
