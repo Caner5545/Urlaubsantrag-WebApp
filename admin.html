@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Urlaubsanträge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-900 text-white p-4">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-blue-400 border-b border-gray-700 pb-4">Eingegangene Anträge</h1>
+        
+        <div id="liste" class="space-y-4">
+            <p class="text-gray-500 italic">Lade Anträge aus der Datenbank...</p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://gmwmnnsmanmhblmmvusj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtd21ubnNtYW5taGJsbW12dXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMjA5ODYsImV4cCI6MjA5Mjg5Njk4Nn0.Y5_SWw_25e0lTDcxU1dqkX7atICOpyk2_jpcWBkrRKM';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function ladeAntraege() {
+            const { data, error } = await _supabase
+                .from('Urlaubsplaner')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            const container = document.getElementById('liste');
+            container.innerHTML = '';
+
+            if (error) {
+                container.innerHTML = `<p class="text-red-500">Fehler beim Laden: ${error.message}</p>`;
+                return;
+            }
+
+            if (data.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-10">Noch keine Anträge vorhanden.</p>';
+                return;
+            }
+
+            data.forEach(antrag => {
+                const card = document.createElement('div');
+                card.className = "bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 " + 
+                                 (antrag.status === 'genehmigt' ? 'border-green-500' : 
+                                  antrag.status === 'abgelehnt' ? 'border-red-500' : 'border-yellow-500');
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">${antrag.name}</h2>
+                            <p class="text-sm text-gray-400 mb-2 font-mono">PNR: ${antrag.personalnummer}</p>
+                            <p class="text-blue-300 font-semibold">${antrag.start_datum} bis ${antrag.end_datum}</p>
+                            <p class="text-gray-300 mt-3 italic bg-gray-700 p-2 rounded text-sm">"${antrag.begruendung || 'Keine Begründung angegeben'}"</p>
+                        </div>
+                        <div class="flex flex-col space-y-2">
+                            <span class="text-xs text-center uppercase font-bold py-1 px-2 rounded bg-gray-700 mb-2">${antrag.status}</span>
+                            <button onclick="updateStatus('${antrag.id}', 'genehmigt')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-sm font-bold transition">Genehmigen</button>
+                            <button onclick="updateStatus('${antrag.id}', 'abgelehnt')" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded text-sm font-bold transition">Ablehnen</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function updateStatus(id, neuerStatus) {
+            const { error } = await _supabase
+                .from('Urlaubsplaner')
+                .update({ status: neuerStatus })
+                .eq('id', id);
+
+            if (error) alert("Fehler: " + error.message);
+            else ladeAntraege();
+        }
+
+        // Initiales Laden
+        ladeAntraege();
+    </script>
+</body>
+</html>
