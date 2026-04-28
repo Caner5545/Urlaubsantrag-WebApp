@@ -3,24 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Urlaubsanträge</title>
+    <title>Admin-Panel | Urlaubsplaner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-900 text-white p-4">
+<body class="bg-gray-900 text-white min-h-screen p-4 md:p-8">
+
     <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-bold mb-8 text-blue-400 border-b border-gray-700 pb-4">Eingegangene Anträge</h1>
-        
-        <div id="liste" class="space-y-4">
-            <p class="text-gray-500 italic">Lade Anträge aus der Datenbank...</p>
+        <div class="flex justify-between items-center mb-8 border-b border-gray-700 pb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-400">Admin-Panel</h1>
+                <p class="text-gray-400 text-sm">Eingegangene Urlaubsanträge verwalten</p>
+            </div>
+            <button onclick="window.location.reload()" class="bg-gray-800 hover:bg-gray-700 p-2 rounded-lg transition">
+                🔄 Aktualisieren
+            </button>
+        </div>
+
+        <div id="liste" class="grid gap-6">
+            <p class="text-center text-gray-500 animate-pulse">Lade Anträge aus der Datenbank...</p>
         </div>
     </div>
 
     <script>
+        // 1. PASSWORT-SCHUTZ
+        const ADMIN_PASSWORT = "Danfoss123"; // <-- ÄNDERE DIESES PASSWORT!
+        
+        const zugang = prompt("Admin-Passwort eingeben:");
+        if (zugang !== ADMIN_PASSWORT) {
+            alert("Zugriff verweigert!");
+            window.location.href = "index.html";
+        }
+
+        // 2. SUPABASE SETUP
         const SUPABASE_URL = 'https://gmwmnnsmanmhblmmvusj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtd21ubnNtYW5taGJsbW12dXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMjA5ODYsImV4cCI6MjA5Mjg5Njk4Nn0.Y5_SWw_25e0lTDcxU1dqkX7atICOpyk2_jpcWBkrRKM';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // 3. ANTRÄGE LADEN
         async function ladeAntraege() {
             const { data, error } = await _supabase
                 .from('Urlaubsplaner')
@@ -31,33 +51,44 @@
             container.innerHTML = '';
 
             if (error) {
-                container.innerHTML = `<p class="text-red-500">Fehler beim Laden: ${error.message}</p>`;
+                container.innerHTML = `<p class="text-red-500">Fehler: ${error.message}</p>`;
                 return;
             }
 
             if (data.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-10">Noch keine Anträge vorhanden.</p>';
+                container.innerHTML = `<p class="text-gray-500 text-center">Keine Anträge gefunden.</p>`;
                 return;
             }
 
             data.forEach(antrag => {
+                const statusColor = 
+                    antrag.status === 'genehmigt' ? 'border-green-500 bg-green-900/20' : 
+                    antrag.status === 'abgelehnt' ? 'border-red-500 bg-red-900/20' : 'border-yellow-500 bg-gray-800';
+
                 const card = document.createElement('div');
-                card.className = "bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 " + 
-                                 (antrag.status === 'genehmigt' ? 'border-green-500' : 
-                                  antrag.status === 'abgelehnt' ? 'border-red-500' : 'border-yellow-500');
+                card.className = `${statusColor} border-l-8 p-6 rounded-xl shadow-xl transition-all`;
                 
                 card.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h2 class="text-xl font-bold text-white">${antrag.name}</h2>
-                            <p class="text-sm text-gray-400 mb-2 font-mono">PNR: ${antrag.personalnummer}</p>
-                            <p class="text-blue-300 font-semibold">${antrag.start_datum} bis ${antrag.end_datum}</p>
-                            <p class="text-gray-300 mt-3 italic bg-gray-700 p-2 rounded text-sm">"${antrag.begruendung || 'Keine Begründung angegeben'}"</p>
+                    <div class="flex flex-col md:flex-row justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <h2 class="text-xl font-bold">${antrag.name}</h2>
+                                <span class="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300 font-mono">${antrag.personalnummer}</span>
+                            </div>
+                            <p class="text-blue-300 font-semibold">${new Date(antrag.start_datum).toLocaleDateString('de-DE')} bis ${new Date(antrag.end_datum).toLocaleDateString('de-DE')}</p>
+                            <p class="text-sm text-gray-400 mt-1 uppercase tracking-widest">${antrag.typ}</p>
+                            <p class="mt-4 text-gray-300 italic bg-black/30 p-3 rounded-lg border border-gray-700">
+                                "${antrag.begruendung || 'Keine Begründung angegeben'}"
+                            </p>
                         </div>
-                        <div class="flex flex-col space-y-2">
-                            <span class="text-xs text-center uppercase font-bold py-1 px-2 rounded bg-gray-700 mb-2">${antrag.status}</span>
-                            <button onclick="updateStatus('${antrag.id}', 'genehmigt')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-sm font-bold transition">Genehmigen</button>
-                            <button onclick="updateStatus('${antrag.id}', 'abgelehnt')" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded text-sm font-bold transition">Ablehnen</button>
+
+                        <div class="flex flex-col justify-center gap-2 min-w-[150px]">
+                            <div class="text-center mb-2">
+                                <span class="text-[10px] uppercase font-black text-gray-500">Aktueller Status</span>
+                                <div class="font-bold text-sm">${antrag.status.toUpperCase()}</div>
+                            </div>
+                            <button onclick="updateStatus('${antrag.id}', 'genehmigt')" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg transition-all active:scale-95">Genehmigen</button>
+                            <button onclick="updateStatus('${antrag.id}', 'abgelehnt')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 rounded-lg transition-all active:scale-95 text-xs">Ablehnen</button>
                         </div>
                     </div>
                 `;
@@ -65,17 +96,21 @@
             });
         }
 
+        // 4. STATUS UPDATEN
         async function updateStatus(id, neuerStatus) {
             const { error } = await _supabase
                 .from('Urlaubsplaner')
                 .update({ status: neuerStatus })
                 .eq('id', id);
 
-            if (error) alert("Fehler: " + error.message);
-            else ladeAntraege();
+            if (error) {
+                alert("Fehler beim Update: " + error.message);
+            } else {
+                ladeAntraege(); // Liste neu laden
+            }
         }
 
-        // Initiales Laden
+        // Initialer Start
         ladeAntraege();
     </script>
 </body>
