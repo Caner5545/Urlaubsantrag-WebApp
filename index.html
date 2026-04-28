@@ -5,61 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Urlaubsplaner 2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-100 p-4 md:p-8">
     <div class="max-w-lg mx-auto bg-white rounded-xl shadow-lg overflow-hidden p-6">
-        <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Urlaubsantrag</h2>
+        <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Urlaubsantrag stellen</h2>
         
         <form id="urlaubsForm" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700">Vollständiger Name</label>
-                    <input type="text" id="name" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Max Mustermann" required>
+                    <input type="text" id="name" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="Max Mustermann" required>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-gray-700">Personalnummer</label>
-                    <input type="text" id="pnr" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm" placeholder="12345" required>
+                    <input type="text" id="pnr" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="12345" required>
                 </div>
             </div>
 
             <div>
                 <label class="block text-sm font-semibold text-gray-700">Art des Urlaubs</label>
-                <select id="typ" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm">
-                    <option value="erholung">Erholungsurlaub</option>
-                    <option value="sonder">Sonderurlaub</option>
-                    <option value="fortbildung">Fortbildung / Bildungsurlaub</option>
+                <select id="typ" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                    <option value="Erholungsurlaub">Erholungsurlaub</option>
+                    <option value="Sonderurlaub">Sonderurlaub</option>
+                    <option value="Fortbildung">Fortbildung</option>
                 </select>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700">Erster Tag</label>
-                    <input type="date" id="start" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm" required>
+                    <label class="block text-sm font-semibold text-gray-700">Von</label>
+                    <input type="date" id="start" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700">Letzter Tag</label>
-                    <input type="date" id="ende" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm" required>
+                    <label class="block text-sm font-semibold text-gray-700">Bis</label>
+                    <input type="date" id="ende" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
                 </div>
             </div>
 
             <div>
-                <label class="block text-sm font-semibold text-gray-700">Begründung / Anmerkung</label>
-                <textarea id="grund" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm" placeholder="Z. B. Umzug, Hochzeit oder Vertretung geklärt..."></textarea>
+                <label class="block text-sm font-semibold text-gray-700">Begründung</label>
+                <textarea id="grund" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="Optional..."></textarea>
             </div>
 
-            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-md font-bold hover:bg-blue-700 transition shadow-md">
-                Antrag verbindlich absenden
+            <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white py-3 rounded-md font-bold hover:bg-blue-700 transition">
+                Antrag absenden
             </button>
         </form>
     </div>
 
     <script>
-        document.getElementById('urlaubsForm').addEventListener('submit', (e) => {
+        // DEINE VERBINDUNGSDATEN
+        const SUPABASE_URL = 'https://gmwmnnsmanmhblmmvusj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtd21ubnNtYW5taGJsbW12dXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMjA5ODYsImV4cCI6MjA5Mjg5Njk4Nn0.Y5_SWw_25e0lTDcxU1dqkX7atICOpyk2_jpcWBkrRKM';
+        
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.getElementById('urlaubsForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            // Hier kommt später die Verbindung zur Datenbank rein!
-            alert('Antrag für ' + document.getElementById('name').value + ' wurde erfasst!');
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerText = 'Wird gesendet...';
+
+            const antrag = {
+                name: document.getElementById('name').value,
+                personalnummer: document.getElementById('pnr').value,
+                typ: document.getElementById('typ').value,
+                start_datum: document.getElementById('start').value,
+                end_datum: document.getElementById('ende').value,
+                begruendung: document.getElementById('grund').value,
+                status: 'offen'
+            };
+
+            const { error } = await _supabase
+                .from('Urlaubsplaner') 
+                .insert([antrag]);
+
+            if (error) {
+                alert('Fehler: ' + error.message);
+                btn.disabled = false;
+                btn.innerText = 'Antrag absenden';
+            } else {
+                alert('Erfolg! Dein Antrag wurde gespeichert.');
+                document.getElementById('urlaubsForm').reset();
+                btn.disabled = false;
+                btn.innerText = 'Antrag absenden';
+            }
         });
     </script>
 </body>
 </html>
-
