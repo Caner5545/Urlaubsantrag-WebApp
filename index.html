@@ -3,40 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Urlaubsplaner</title>
+    <title>Urlaubsplaner Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100 p-4">
+<body class="bg-gray-100 p-4 md:p-8 font-sans">
 
-    <div class="max-w-lg mx-auto bg-white rounded-xl shadow-lg p-6">
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Urlaubsantrag stellen</h2>
-        
-        <form id="urlaubsForm" class="space-y-4">
-            <input type="text" id="name" placeholder="Name" class="w-full border p-2 rounded" required>
-            <input type="text" id="pnr" placeholder="Personalnummer" class="w-full border p-2 rounded" required>
-            <div class="grid grid-cols-2 gap-2">
-                <input type="date" id="start" class="border p-2 rounded" required>
-                <input type="date" id="ende" class="border p-2 rounded" required>
-            </div>
-            <textarea id="grund" placeholder="Grund (optional)" class="w-full border p-2 rounded"></textarea>
-            <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white py-3 rounded-md font-bold hover:bg-blue-700">
-                Antrag absenden
-            </button>
-        </form>
+    <div class="max-w-lg mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="bg-blue-600 p-6 text-white text-center">
+            <h2 class="text-2xl font-bold">Urlaubsantrag</h2>
+            <p class="text-blue-100 text-sm mt-1">Fülle das Formular aus, um Urlaub zu beantragen</p>
+        </div>
 
-        <div class="mt-10 pt-6 border-t border-gray-200">
-            <h3 class="text-lg font-bold text-gray-800 mb-2">Status prüfen</h3>
-            <p class="text-xs text-gray-500 mb-4">Gib deine Personalnummer ein, um zu sehen, ob dein Urlaub genehmigt wurde.</p>
-            
-            <div class="flex space-x-2">
-                <input type="text" id="pnrCheck" class="flex-1 border border-gray-300 rounded-md p-2" placeholder="Deine PNR eingeben">
-                <button onclick="checkStatus()" class="bg-gray-800 text-white px-4 py-2 rounded-md font-bold hover:bg-black transition text-sm">
-                    Prüfen
+        <div class="p-6">
+            <form id="urlaubsForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Name</label>
+                        <input type="text" id="name" placeholder="Max Mustermann" class="w-full border-b-2 border-gray-200 p-2 focus:border-blue-500 outline-none transition" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Personalnummer</label>
+                        <input type="text" id="pnr" placeholder="12345" class="w-full border-b-2 border-gray-200 p-2 focus:border-blue-500 outline-none transition" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase">Art des Urlaubs</label>
+                    <select id="typ" class="w-full border-b-2 border-gray-200 p-2 focus:border-blue-500 outline-none transition bg-white">
+                        <option value="Erholungsurlaub">🌴 Erholungsurlaub</option>
+                        <option value="Sonderurlaub">⭐ Sonderurlaub</option>
+                        <option value="Fortbildung">📚 Fortbildung</option>
+                        <option value="Krank / Arzt">🏥 Krank / Arzt</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Von</label>
+                        <input type="date" id="start" class="w-full border-b-2 border-gray-200 p-2 focus:border-blue-500 outline-none transition" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Bis</label>
+                        <input type="date" id="ende" class="w-full border-b-2 border-gray-200 p-2 focus:border-blue-500 outline-none transition" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase">Begründung</label>
+                    <textarea id="grund" rows="2" placeholder="Optionaler Grund..." class="w-full border-b-2 border-gray-200 p-2 focus:border-blue-500 outline-none transition resize-none"></textarea>
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95">
+                    Antrag jetzt absenden
                 </button>
+            </form>
+
+            <div class="mt-12 pt-8 border-t-2 border-dashed border-gray-100">
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <h3 class="text-sm font-bold text-gray-700 mb-3 flex items-center">
+                        🔍 Status-Check für Mitarbeiter
+                    </h3>
+                    <div class="flex space-x-2">
+                        <input type="text" id="pnrCheck" class="flex-1 border border-gray-300 rounded-lg p-2 text-sm shadow-sm" placeholder="Deine PNR eingeben">
+                        <button onclick="checkStatus()" class="bg-gray-800 text-white px-4 py-2 rounded-lg font-bold hover:bg-black transition text-sm">
+                            Prüfen
+                        </button>
+                    </div>
+                    <div id="statusErgebnis" class="mt-4 hidden p-4 rounded-lg text-sm font-bold animate-pulse"></div>
+                </div>
             </div>
-            
-            <div id="statusErgebnis" class="mt-4 hidden p-4 rounded-md text-sm font-bold"></div>
         </div>
     </div>
 
@@ -49,11 +85,14 @@
         document.getElementById('urlaubsForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
-            btn.innerText = 'Wird gesendet...';
+            const originalText = btn.innerText;
+            btn.innerText = 'Wird übertragen...';
+            btn.disabled = true;
 
             const { error } = await _supabase.from('Urlaubsplaner').insert([{
                 name: document.getElementById('name').value,
                 personalnummer: document.getElementById('pnr').value,
+                typ: document.getElementById('typ').value,
                 start_datum: document.getElementById('start').value,
                 end_datum: document.getElementById('ende').value,
                 begruendung: document.getElementById('grund').value,
@@ -63,10 +102,11 @@
             if (error) {
                 alert('Fehler: ' + error.message);
             } else {
-                alert('Erfolg! Antrag wurde abgeschickt.');
+                alert('Perfekt! Dein Antrag wurde gespeichert.');
                 document.getElementById('urlaubsForm').reset();
             }
-            btn.innerText = 'Antrag absenden';
+            btn.innerText = originalText;
+            btn.disabled = false;
         });
 
         // 2. Status prüfen
@@ -74,7 +114,7 @@
             const pnr = document.getElementById('pnrCheck').value;
             const resDiv = document.getElementById('statusErgebnis');
 
-            if (!pnr) return alert("Bitte Nummer eingeben!");
+            if (!pnr) return alert("Bitte Personalnummer eingeben!");
 
             const { data, error } = await _supabase
                 .from('Urlaubsplaner')
@@ -82,23 +122,29 @@
                 .eq('personalnummer', pnr)
                 .order('created_at', { ascending: false });
 
-            resDiv.classList.remove('hidden');
+            resDiv.classList.remove('hidden', 'animate-pulse');
 
             if (data && data.length > 0) {
-                const s = data[0].status; // Wir nehmen den neuesten Antrag
-                resDiv.innerHTML = `Dein Antrag vom ${data[0].start_datum}<br>Status: <span class="uppercase">${s}</span>`;
+                const antrag = data[0]; // Der aktuellste Antrag
+                const datumVon = new Date(antrag.start_datum).toLocaleDateString('de-DE');
+                const datumBis = new Date(antrag.end_datum).toLocaleDateString('de-DE');
                 
-                // Farben setzen
-                if (s === 'genehmigt') {
-                    resDiv.className = "mt-4 p-4 rounded-md text-sm font-bold bg-green-100 text-green-800 border border-green-300";
-                } else if (s === 'abgelehnt') {
-                    resDiv.className = "mt-4 p-4 rounded-md text-sm font-bold bg-red-100 text-red-800 border border-red-300";
+                resDiv.innerHTML = `
+                    <div class="text-xs uppercase opacity-70 mb-1">Letzter Antrag für Zeitraum:</div>
+                    <div class="mb-2">${datumVon} bis ${datumBis}</div>
+                    <div class="text-lg">Status: <span class="underline">${antrag.status.toUpperCase()}</span></div>
+                `;
+                
+                if (antrag.status === 'genehmigt') {
+                    resDiv.className = "mt-4 p-4 rounded-lg text-sm font-bold bg-green-500 text-white shadow-lg shadow-green-200";
+                } else if (antrag.status === 'abgelehnt') {
+                    resDiv.className = "mt-4 p-4 rounded-lg text-sm font-bold bg-red-500 text-white shadow-lg shadow-red-200";
                 } else {
-                    resDiv.className = "mt-4 p-4 rounded-md text-sm font-bold bg-yellow-100 text-yellow-800 border border-yellow-300";
+                    resDiv.className = "mt-4 p-4 rounded-lg text-sm font-bold bg-yellow-400 text-yellow-900 shadow-lg shadow-yellow-100";
                 }
             } else {
-                resDiv.innerText = "Kein Antrag unter dieser Nummer gefunden.";
-                resDiv.className = "mt-4 p-4 rounded-md text-sm font-bold bg-gray-200 text-gray-700";
+                resDiv.innerText = "Kein Antrag unter dieser PNR gefunden.";
+                resDiv.className = "mt-4 p-4 rounded-lg text-sm font-bold bg-gray-200 text-gray-700";
             }
         }
     </script>
